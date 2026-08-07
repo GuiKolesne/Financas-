@@ -456,6 +456,7 @@ git commit -m "feat: modulo de dinheiro em centavos com formatacao pt-BR"
 - Produces:
   - `lastDayOfMonth(year: number, month: number): number` — `month` é 1–12
   - `clampDay(year: number, month: number, day: number): number` — dia 31 em fevereiro vira 28/29
+  - `addMonths(year: number, month: number, count: number): { year: number; month: number }` — exportada porque a Tarefa 5 precisa dela; sem isso a aritmética de virada de ano ficaria duplicada nos dois módulos
   - `invoiceMonthFor(purchaseDate: string, closingDay: number): { year: number; month: number }`
   - `dueDateFor(invoiceYear: number, invoiceMonth: number, closingDay: number, dueDay: number): string`
   - `firstDueDateFor(purchaseDate: string, closingDay: number, dueDay: number): string`
@@ -622,7 +623,7 @@ function toISO(year: number, month: number, day: number): string {
 }
 
 /** Soma meses a um par ano/mês, virando o ano quando passa de dezembro. */
-function addMonths(year: number, month: number, count: number) {
+export function addMonths(year: number, month: number, count: number) {
   const zeroBased = month - 1 + count;
   return {
     year: year + Math.floor(zeroBased / 12),
@@ -847,7 +848,7 @@ Expected: FAIL — `Failed to resolve import "./installments"`.
 Criar `src/lib/installments.ts`:
 
 ```ts
-import { invoiceMonthFor, dueDateFor } from './billing-cycle';
+import { invoiceMonthFor, dueDateFor, addMonths } from './billing-cycle';
 
 export interface InstallmentInput {
   totalCents: number;
@@ -896,14 +897,12 @@ export function generateInstallments(input: InstallmentInput): InstallmentSpec[]
 
   return valores.map((amountCents, i) => {
     // A parcela k cai na fatura k-1 meses depois da primeira.
-    const zeroBased = primeiraFatura.month - 1 + i;
-    const year = primeiraFatura.year + Math.floor(zeroBased / 12);
-    const month = (zeroBased % 12) + 1;
+    const fatura = addMonths(primeiraFatura.year, primeiraFatura.month, i);
 
     return {
       number: i + 1,
       amountCents,
-      dueDate: dueDateFor(year, month, closingDay, dueDay),
+      dueDate: dueDateFor(fatura.year, fatura.month, closingDay, dueDay),
     };
   });
 }
@@ -2986,7 +2985,8 @@ git commit -m "feat: casca do app com navegacao responsiva e telas de erro"
 **Interfaces:**
 - Consumes: `types.ts`, `createServerSupabase`, `requireUser`
 - Produces:
-  - `rowToCategory(row): Category`, `rowToCard(row): CreditCard`, `rowToTransaction(row): Transaction`, `rowToBudget(row): Budget`
+  - as formas de linha `CategoryRow`, `CardRow`, `TransactionRow`, `BudgetRow`
+  - `rowToCategory(row: CategoryRow): Category`, `rowToCard(row: CardRow): CreditCard`, `rowToTransaction(row: TransactionRow): Transaction`, `rowToBudget(row: BudgetRow): Budget`
   - `listCategories(): Promise<Category[]>`
   - Server Actions `createCategory`, `updateCategory`, `archiveCategory`
 
@@ -3078,16 +3078,66 @@ Expected: FAIL — `Failed to resolve import "./mappers"`.
 Criar `src/queries/mappers.ts`:
 
 ```ts
-import type { Budget, Category, CreditCard, Transaction } from '@/lib/types';
+import type {
+  Budget,
+  Category,
+  CreditCard,
+  PaymentMethod,
+  Transaction,
+  TransactionType,
+} from '@/lib/types';
 
 /**
  * O banco fala snake_case, o domínio fala camelCase. A tradução acontece
  * só aqui — nenhum componente lê `amount_cents` direto.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * Cada tradutor declara a forma exata da linha que aceita. Nada de `any`:
+ * se um `select` esquecer uma coluna, o erro aparece na compilação, não em
+ * produção com um campo `undefined` na tela.
+ */
+export interface CategoryRow {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  type: TransactionType;
+  is_archived: boolean;
+}
 
-export function rowToCategory(row: any): Category {
+export interface CardRow {
+  id: string;
+  nickname: string;
+  brand: string;
+  limit_cents: number;
+  closing_day: number;
+  due_day: number;
+  color: string;
+}
+
+export interface TransactionRow {
+  id: string;
+  date: string;
+  amount_cents: number;
+  type: TransactionType;
+  category_id: string;
+  description: string;
+  payment_method: PaymentMethod;
+  credit_card_id: string | null;
+  installment_plan_id: string | null;
+  installment_number: number | null;
+  is_recurring: boolean;
+}
+
+export interface BudgetRow {
+  id: string;
+  category_id: string;
+  month: string;
+  limit_cents: number;
+}
+
+export function rowToCategory(row: CategoryRow): Category {
   return {
     id: row.id,
     name: row.name,
@@ -3098,7 +3148,7 @@ export function rowToCategory(row: any): Category {
   };
 }
 
-export function rowToCard(row: any): CreditCard {
+export function rowToCard(row: CardRow): CreditCard {
   return {
     id: row.id,
     nickname: row.nickname,
@@ -3110,7 +3160,7 @@ export function rowToCard(row: any): CreditCard {
   };
 }
 
-export function rowToTransaction(row: any): Transaction {
+export function rowToTransaction(row: TransactionRow): Transaction {
   return {
     id: row.id,
     date: row.date,
@@ -3126,7 +3176,7 @@ export function rowToTransaction(row: any): Transaction {
   };
 }
 
-export function rowToBudget(row: any): Budget {
+export function rowToBudget(row: BudgetRow): Budget {
   return {
     id: row.id,
     categoryId: row.category_id,
