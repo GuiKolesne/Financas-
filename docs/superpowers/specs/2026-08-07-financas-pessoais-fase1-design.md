@@ -277,8 +277,12 @@ em branco. Nenhum jargão financeiro sem explicação ao lado.
 | Categoria | Tratamento |
 |---|---|
 | Erro de digitação (valor negativo, data absurda, parcela sem cartão) | Validação Zod no formulário, mensagem em português imediata |
-| Erro de rede ou banco | A tela não quebra: exibe o que já tem e um aviso discreto "não consegui atualizar agora" |
-| Erro inesperado | `error.tsx` do Next com mensagem e botão de recarregar. Nunca tela branca |
+| Erro de rede ou banco | A consulta lança um erro descritivo, capturado pelo `error.tsx`, que mostra "Não consegui carregar esta tela" e um botão de tentar de novo. Os dados já gravados não são afetados, e a mensagem diz isso |
+| Erro inesperado | Mesmo caminho: `error.tsx` com mensagem e botão de recarregar. Nunca tela branca |
+
+Exibir dados em cache com um aviso discreto, em vez da tela de erro, exigiria
+uma camada de cache no cliente que a Fase 1 não tem. Fica registrado como
+possível melhoria, não como promessa desta fase.
 
 ## Testes
 
