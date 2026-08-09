@@ -6,6 +6,7 @@ import { currentMonthISO } from '@/lib/month';
 import { Money } from '@/components/ui/money';
 import { Filters } from '@/components/transactions/filters';
 import { TransactionList } from '@/components/transactions/transaction-list';
+import { TransactionForm } from '@/components/transactions/transaction-form';
 import type { TransactionType } from '@/lib/types';
 
 export default async function TransacoesPage({
@@ -73,6 +74,8 @@ export default async function TransacoesPage({
         cards={cartoes}
         installmentTotals={totaisDeParcelas}
       />
+
+      <TransactionForm categories={categorias} cards={cartoes} />
     </div>
   );
 }

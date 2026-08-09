@@ -1,4 +1,5 @@
 import { Money } from '@/components/ui/money';
+import { DeleteButtons } from './delete-buttons';
 import type { Category, CreditCard, Transaction } from '@/lib/types';
 
 /** "2026-08-27" → "27/08". */
@@ -69,6 +70,8 @@ export function TransactionList({
             <span className="shrink-0 font-medium">
               <Money cents={t.type === 'income' ? t.amountCents : -t.amountCents} colorBySign />
             </span>
+
+            <DeleteButtons transactionId={t.id} installmentPlanId={t.installmentPlanId} />
           </li>
         );
       })}
