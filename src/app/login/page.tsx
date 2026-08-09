@@ -36,16 +36,17 @@ export default function LoginPage() {
 
           <label className="block">
             <span className="mb-1 block text-sm text-slate-700 dark:text-slate-300">Senha</span>
+            {/* Sem minLength aqui: quem já tem conta com senha antiga precisa
+                conseguir entrar. A exigência de força vale no cadastro. */}
             <input
               name="password"
               type="password"
               required
               autoComplete="current-password"
-              minLength={8}
               className={campo}
             />
             <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-              Pelo menos 8 caracteres.
+              Para criar conta: 12 caracteres ou mais, misturando letras e números.
             </span>
           </label>
 

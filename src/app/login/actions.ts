@@ -4,10 +4,16 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { checkPassword } from '@/lib/password';
 
+/**
+ * No login só validamos o formato. A exigência de força vale no cadastro:
+ * aplicá-la aqui trancaria para fora quem criou a conta com uma senha antiga,
+ * sem ter como trocá-la.
+ */
 const credenciais = z.object({
   email: z.email('Digite um e-mail válido.'),
-  password: z.string().min(8, 'A senha precisa de pelo menos 8 caracteres.'),
+  password: z.string().min(1, 'Digite sua senha.'),
 });
 
 export type AuthState = { error: string | null };
@@ -67,6 +73,9 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
   }
+
+  const fraca = checkPassword(parsed.data.password, parsed.data.email);
+  if (fraca) return { error: fraca };
 
   const supabase = await createServerSupabase();
   const { data, error } = await supabase.auth.signUp(parsed.data);
