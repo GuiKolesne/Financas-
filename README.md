@@ -1,36 +1,111 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Suas finanças
 
-## Getting Started
+Aplicativo web de finanças pessoais em português, feito para substituir a
+planilha `Planilha_Clareza_Financeira_2026`.
 
-First, run the development server:
+## O que ele faz
+
+- **Resumo** — receitas, despesas, saldo atual e saldo previsto do mês, com
+  avisos em português claro ("Você já usou 80% do orçamento de 🎬 Lazer e ainda
+  faltam 16 dias para o mês fechar")
+- **Lançamentos** — receitas e despesas com filtros por mês, tipo, categoria e
+  busca por descrição
+- **Cartões** — fatura atual e a seguinte de cada cartão, com o ciclo de
+  fechamento e vencimento
+- **Orçamentos** — teto por categoria, com barra verde, amarela ou vermelha
+- **Simulador** — compara pagar à vista com parcelar deixando o dinheiro
+  rendendo, e mostra os juros escondidos no parcelamento
+- **Categorias** — as 32 categorias da planilha antiga já vêm cadastradas
+
+## A regra mais importante: como as parcelas contam
+
+Esta é a decisão que mais gera dúvida ao olhar os números, então vale ler.
+
+Você compra uma TV de **R$ 3.000 em 10x** no dia 5 de agosto. Quanto o app diz
+que você gastou em agosto?
+
+**R$ 300.** Não R$ 3.000.
+
+Cada parcela conta no mês em que ela **vence**, não no mês da compra. O motivo
+é que é assim que o dinheiro sai da sua conta — e é isso que faz o orçamento de
+uma categoria refletir o que realmente cabe no seu mês.
+
+Para o compromisso total não ficar invisível, o Resumo mostra uma faixa
+**"Comprometido com parcelas futuras"** com a soma das parcelas que vencem
+depois deste mês — no exemplo, R$ 2.700.
+
+O app também respeita o ciclo do seu cartão: uma compra feita **depois** do dia
+de fechamento cai só na fatura seguinte. Comprar dia 5 num cartão que fecha dia
+20 e vence 27 dá 22 dias até a primeira parcela; comprar dia 21 dá 37 dias.
+
+## Como rodar na sua máquina
+
+Você precisa do Node.js instalado (versão 24 ou mais nova).
+
+```bash
+npm install
+```
+
+Copie o arquivo de exemplo e preencha com os dados do seu projeto Supabase
+(Project Settings → API):
+
+```bash
+cp .env.example .env.local
+```
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+O app abre em `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+O `.env.local` **nunca** vai para o git — é onde ficam as chaves.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## O banco de dados
 
-## Learn More
+As migrações ficam em `supabase/migrations/`, numeradas na ordem em que devem
+ser aplicadas. Elas criam as tabelas, ligam a proteção por usuário e cadastram
+as 32 categorias iniciais quando alguém cria uma conta.
 
-To learn more about Next.js, take a look at the following resources:
+`scripts/prova-rls.md` registra os testes feitos **por fora do app**, batendo
+direto na API com o token de dois usuários diferentes, para provar que um não
+enxerga nem altera os dados do outro. A interface não é prova de segurança.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Testes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm test
+```
 
-## Deploy on Vercel
+São 202 testes em duas frentes:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **lógica** — os módulos de cálculo (dinheiro, ciclo de fatura, parcelas,
+  simulador, previsão de saldo, avisos), sem interface nenhuma
+- **componentes** — as telas com DOM de verdade, simulando cliques
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Os cálculos foram escritos com os testes **antes** do código. É onde mora o
+risco: um erro de arredondamento ou de ciclo de fatura produz um número errado
+que só apareceria meses depois.
+
+Vale rodar também:
+
+```bash
+npx tsc --noEmit
+```
+
+```bash
+npm run lint
+```
+
+## O que ainda não existe
+
+Ficou fora desta primeira versão, de propósito:
+
+- Leitor de notificações bancárias (colar o texto do aviso do banco e o app
+  entender sozinho) e importação de arquivos OFX/CSV
+- Metas de poupança
+- Controle de dívidas com os métodos Bola de Neve e Avalanche
+- Carteira de investimentos, patrimônio e cálculo de independência financeira
+- Exportar relatórios em PDF
+- Lançamentos recorrentes automáticos — o campo "repete todo mês" existe e
+  entra no saldo previsto, mas nada é lançado sozinho
