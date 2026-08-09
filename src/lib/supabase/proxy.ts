@@ -29,9 +29,14 @@ export async function updateSession(request: NextRequest) {
 
   const { data } = await supabase.auth.getUser();
 
+  // /redefinir-senha é pública de propósito: quem chega ali veio do link do
+  // e-mail e ainda não tem senha para entrar. A própria action confere se
+  // existe a sessão temporária antes de trocar qualquer coisa.
   const rotaPublica =
     request.nextUrl.pathname.startsWith('/login') ||
-    request.nextUrl.pathname.startsWith('/auth');
+    request.nextUrl.pathname.startsWith('/auth') ||
+    request.nextUrl.pathname.startsWith('/esqueci-senha') ||
+    request.nextUrl.pathname.startsWith('/redefinir-senha');
 
   if (!data.user && !rotaPublica) {
     const url = request.nextUrl.clone();

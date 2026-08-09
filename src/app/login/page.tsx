@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useActionState } from 'react';
 import { signIn, signUp, type AuthState } from './actions';
 
@@ -74,6 +75,13 @@ export default function LoginPage() {
           >
             {cadastrando ? 'Criando…' : 'Criar conta'}
           </button>
+
+          <Link
+            href="/esqueci-senha"
+            className="block pt-1 text-center text-sm text-slate-500 underline underline-offset-4 dark:text-slate-400"
+          >
+            Esqueci minha senha
+          </Link>
         </form>
       </div>
     </main>
