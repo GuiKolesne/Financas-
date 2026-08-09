@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { formatBRLCompact } from '@/lib/money';
 
 /**
- * Campo que só aceita formato brasileiro. Reformata a cada tecla, então o
- * texto enviado ao servidor é sempre o que `parseBRL` sabe ler.
+ * Campo que só aceita formato brasileiro. O texto enviado ao servidor é
+ * sempre o que `parseBRL` sabe ler.
  */
 export function MoneyInput({
   name,
@@ -13,15 +13,32 @@ export function MoneyInput({
   required = true,
   id,
   onCentsChange,
+  valueCents,
 }: {
   name: string;
   defaultCents?: number;
   required?: boolean;
   id?: string;
-  /** Avisa o formulário-pai a cada mudança, para prévias em tempo real. */
+  /** Avisa o formulário-pai a cada tecla, para prévias em tempo real. */
   onCentsChange?: (cents: number) => void;
+  /**
+   * Valor imposto de fora (um botão que preenche o campo, por exemplo).
+   * Sem isso o campo ignoraria a mudança, porque guarda o próprio texto.
+   */
+  valueCents?: number;
 }) {
-  const [texto, setTexto] = useState(defaultCents ? formatBRLCompact(defaultCents) : '');
+  const [textoInterno, setTextoInterno] = useState(
+    defaultCents ? formatBRLCompact(defaultCents) : '',
+  );
+
+  // Controlado quando o pai manda `valueCents`; senão, guarda o próprio texto.
+  // Derivar em vez de sincronizar com efeito evita renderização em cascata.
+  const controlado = valueCents !== undefined;
+  const texto = controlado
+    ? valueCents === 0
+      ? ''
+      : formatBRLCompact(valueCents)
+    : textoInterno;
 
   /**
    * Os dígitos preenchem a partir dos centavos, como no aplicativo do banco:
@@ -34,7 +51,7 @@ export function MoneyInput({
     const digitos = bruto.replace(/\D/g, '').slice(0, 11);
     const cents = digitos === '' ? 0 : Number(digitos);
 
-    setTexto(digitos === '' ? '' : formatBRLCompact(cents));
+    if (!controlado) setTextoInterno(digitos === '' ? '' : formatBRLCompact(cents));
     onCentsChange?.(cents);
   }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
+import { useActionState, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createTransaction, type ActionState } from '@/app/(app)/transacoes/actions';
 import { MoneyInput } from '@/components/ui/money-input';
@@ -33,43 +33,34 @@ export function TransactionForm({
   cards: CreditCard[];
 }) {
   const params = useSearchParams();
-  const [estado, salvar, salvando] = useActionState(createTransaction, estadoInicial);
+  // Vindo do simulador com "Lançar essa compra", o painel abre já preenchido.
+  // Ler na inicialização, e não num efeito, evita renderização em cascata.
+  const valorDaURL = params.get('valor');
+  const cartaoDaURL = params.get('cartao');
 
-  const [aberto, setAberto] = useState(false);
+  const [aberto, setAberto] = useState(() => valorDaURL !== null);
   const [tipo, setTipo] = useState<TransactionType>('expense');
-  const [forma, setForma] = useState<PaymentMethod>('pix');
-  const [cartaoId, setCartaoId] = useState('');
-  const [parcelas, setParcelas] = useState(1);
-  const [valorCents, setValorCents] = useState(0);
-  const [data, setData] = useState(hojeISO());
+  const [forma, setForma] = useState<PaymentMethod>(cartaoDaURL ? 'credit' : 'pix');
+  const [cartaoId, setCartaoId] = useState(cartaoDaURL ?? '');
+  const [parcelas, setParcelas] = useState(() => Number(params.get('parcelas') ?? 1));
+  const [valorCents, setValorCents] = useState(() => Number(valorDaURL ?? 0));
+  const [data, setData] = useState(() => params.get('data') ?? hojeISO());
 
-  // Vindo do simulador com "Lançar essa compra": abre já preenchido.
-  useEffect(() => {
-    const valor = params.get('valor');
-    if (!valor) return;
+  // Fechar o painel é consequência do envio dar certo, então acontece no
+  // próprio fluxo da ação — não num efeito olhando o resultado depois.
+  const [estado, salvar, salvando] = useActionState(
+    async (anterior: ActionState, formData: FormData) => {
+      const resultado = await createTransaction(anterior, formData);
 
-    setValorCents(Number(valor));
-    setParcelas(Number(params.get('parcelas') ?? 1));
-    setData(params.get('data') ?? hojeISO());
-
-    const cartao = params.get('cartao');
-    if (cartao) {
-      setCartaoId(cartao);
-      setForma('credit');
-    }
-    setAberto(true);
-  }, [params]);
-
-  // Salvou sem erro: fecha o painel e limpa para o próximo lançamento.
-  useEffect(() => {
-    if (salvando) return;
-    if (estado.error === null && aberto) {
-      setAberto(false);
-      setValorCents(0);
-      setParcelas(1);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [estado]);
+      if (resultado.error === null) {
+        setAberto(false);
+        setValorCents(0);
+        setParcelas(1);
+      }
+      return resultado;
+    },
+    estadoInicial,
+  );
 
   const doTipo = categories.filter((c) => c.type === tipo);
   const cartaoEscolhido = cards.find((c) => c.id === cartaoId) ?? null;
