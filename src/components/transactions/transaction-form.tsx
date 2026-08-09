@@ -123,10 +123,20 @@ export function TransactionForm({
           </div>
           <input type="hidden" name="type" value={tipo} />
 
-          <label>
-            <span className={rotulo}>Valor</span>
-            <MoneyInput name="amount" defaultCents={valorCents} onCentsChange={setValorCents} />
-          </label>
+          {/* Rótulo associado por id: o MoneyInput tem um "R$" decorativo
+              dentro, e um <label> que envolve o campo acabaria virando o nome
+              "Valor R$" para quem usa leitor de tela. */}
+          <div>
+            <label htmlFor="campo-valor" className={rotulo}>
+              Valor
+            </label>
+            <MoneyInput
+              id="campo-valor"
+              name="amount"
+              defaultCents={valorCents}
+              onCentsChange={setValorCents}
+            />
+          </div>
 
           <label>
             <span className={rotulo}>Data</span>

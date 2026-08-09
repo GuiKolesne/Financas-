@@ -43,10 +43,12 @@ export function CardForm() {
           <input name="due_day" type="number" min={1} max={31} required defaultValue={27} className={campo} />
         </label>
 
-        <label>
-          <span className={rotulo}>Limite (opcional)</span>
-          <MoneyInput name="limit" required={false} />
-        </label>
+        <div>
+          <label htmlFor="campo-limite" className={rotulo}>
+            Limite (opcional)
+          </label>
+          <MoneyInput id="campo-limite" name="limit" required={false} />
+        </div>
 
         <label>
           <span className={rotulo}>Cor</span>
