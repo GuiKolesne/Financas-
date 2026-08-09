@@ -97,6 +97,52 @@ npx tsc --noEmit
 npm run lint
 ```
 
+## Publicar na internet
+
+O app é publicado na Vercel. Os dados continuam protegidos por login: sem
+sessão, toda tela redireciona para `/login`, e o banco recusa qualquer leitura
+sem token — as duas coisas foram verificadas.
+
+**1. Entre na Vercel** (só na primeira vez):
+
+```bash
+npx vercel login
+```
+
+**2. Publique:**
+
+```bash
+npx vercel --prod
+```
+
+**3. Configure as variáveis de ambiente** no painel da Vercel, em
+Settings → Environment Variables. São as mesmas duas do seu `.env.local`:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+Depois de adicioná-las, publique de novo para elas valerem.
+
+**4. Libere a URL no Supabase**, em Authentication → URL Configuration:
+
+- **Site URL**: a URL que a Vercel devolveu
+- **Redirect URLs**: adicione também `SUA-URL/auth/callback`
+
+Sem isso o login não volta para o lugar certo.
+
+## Configurações recomendadas no Supabase
+
+Ficam no painel do projeto e não dá para mudar pelo código:
+
+- **Authentication → Attack Protection → Leaked password protection**: liga a
+  checagem contra o banco do HaveIBeenPwned, que recusa senhas já vazadas em
+  ataques conhecidos. O verificador de segurança do Supabase aponta isso
+  enquanto estiver desligado.
+- **Authentication → Providers → Google**: para o botão "Entrar com Google"
+  aparecer. A rota `/auth/callback` já está pronta; falta só o Client ID e o
+  Client Secret do Google Cloud. Enquanto não houver, o botão fica escondido
+  em vez de dar erro.
+
 ## O que ainda não existe
 
 Ficou fora desta primeira versão, de propósito:
